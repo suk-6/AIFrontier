@@ -6,7 +6,7 @@ import numpy as np
 import json
 from datetime import datetime
 import logging
-from flask import Flask, send_file, request
+from flask import Flask, send_file, request, redirect
 import io
 
 app = Flask(__name__)
@@ -81,6 +81,11 @@ def imageHandler():
     LOGGER.info(resultData)
 
     return json.dumps({"result": resultData, "img": boundImage})
+
+
+@app.route("/", methods=["GET"])
+def index():
+    return redirect("https://github.com/suk-6/AIFrontier")
 
 
 if __name__ == "__main__":

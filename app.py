@@ -6,8 +6,7 @@ import numpy as np
 import json
 from datetime import datetime
 import logging
-from flask import Flask, send_file, request, redirect
-import io
+from flask import Flask, request, redirect
 
 app = Flask(__name__)
 

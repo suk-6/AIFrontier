@@ -29,6 +29,9 @@ thickness = 2
 def calcImage(bbox, frameNp, imageWidth, imageHeight, now):
     xmin, ymin, xmax, ymax, conf, label = bbox[0].tolist()
 
+    if label == 3 or label == 4:  # 라벨 데이터 변경 하드코딩
+        labal -= 1
+
     bboxCoords = {
         "requestTime": now.strftime("%Y-%m-%d_%H:%M:%S"),
         "conf": conf,

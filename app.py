@@ -6,13 +6,13 @@ import numpy as np
 import json
 from datetime import datetime
 import logging
-from flask import Flask, send_file
+from flask import Flask, send_file, request
 import io
 
 app = Flask(__name__)
 
 model = torch.hub.load(
-    ".", "custom", path="./models/model.pt", source="local", force_reload=True
+    "./yolov5", "custom", path="./best.pt", source="local", force_reload=True
 )
 
 # LOGGER
@@ -49,8 +49,12 @@ def calcImage(bbox, frameNp, imageWidth, imageHeight, now):
 
 
 @app.route("/api/image", methods=["POST"])
-def imageHandler(frameBase64):
+def imageHandler():
     now = datetime.now()
+
+    reqJson = request.get_json()
+
+    frameBase64 = reqJson["img"]
 
     frameData = base64.b64decode(frameBase64)
     frameNp = cv2.imdecode(np.frombuffer(frameData, np.uint8), cv2.IMREAD_COLOR)
@@ -61,26 +65,20 @@ def imageHandler(frameBase64):
     imageWidth = frameNp.shape[1]
     imageHeight = frameNp.shape[0]
 
-    confs = []
+    maxConf = max([bbox[0][4].tolist() for bbox in zip(results.xyxy[0])])
 
     for bbox in zip(results.xyxy[0]):
-        confs.append(bbox[0][4].tolist())
+        if bbox[0][4].tolist() == maxConf:
+            bboxCoords, frameNp = calcImage(bbox, frameNp, imageWidth, imageHeight, now)
 
-    maxConf = max(confs)
-    bbox = [bbox for bbox in zip(results.xyxy[0]) if bbox[0][4].tolist() == maxConf]
+    boundImage = cv2.cvtColor(frameNp, cv2.COLOR_RGB2BGR)
+    boundImage = base64.b64encode(cv2.imencode(".jpg", boundImage)[1]).decode("utf-8")
 
-    bboxCoords, frameNp = calcImage(bbox, frameNp, imageWidth, imageHeight, now)
+    resultData = json.dumps(bboxCoords, default=str)
+    LOGGER.info(resultData)
 
-    jsonData = json.dumps(bboxCoords, default=str)
-    boundImage = Image.fromarray(frameNp)
-    data = io.BytesIO()
-    boundImage.save(data, "JPEG")
+    return json.dumps({"result": resultData, "img": boundImage})
 
-    LOGGER.info(jsonData)
 
-    return send_file(
-        data,
-        mimetype="image/jpeg",
-        attachment_filename="result.jpg",
-        as_attachment=True,
-    )
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port="10000")

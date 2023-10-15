@@ -56,32 +56,47 @@ def calcImage(bbox, frameNp, imageWidth, imageHeight, now):
 def imageHandler():
     now = datetime.now()
 
+    if not request.is_json:
+        return json.dumps({"result": "Check your request data"})
+
     reqJson = request.get_json()
 
     frameBase64 = reqJson["img"]
 
-    frameData = base64.b64decode(frameBase64)
-    frameNp = cv2.imdecode(np.frombuffer(frameData, np.uint8), cv2.IMREAD_COLOR)
-    framePil = Image.fromarray(frameNp)
+    try:
+        frameData = base64.b64decode(frameBase64)
+        frameNp = cv2.imdecode(np.frombuffer(frameData, np.uint8), cv2.IMREAD_COLOR)
+        framePil = Image.fromarray(frameNp)
+    except Exception as e:
+        LOGGER.error(e)
+        return json.dumps({"result": "Check your image data"})
 
     results = model(framePil)
 
     imageWidth = frameNp.shape[1]
     imageHeight = frameNp.shape[0]
 
-    maxConf = max([bbox[0][4].tolist() for bbox in zip(results.xyxy[0])])
+    try:
+        maxConf = max([bbox[0][4].tolist() for bbox in zip(results.xyxy[0])])
 
-    for bbox in zip(results.xyxy[0]):
-        if bbox[0][4].tolist() == maxConf:
-            bboxCoords, frameNp = calcImage(bbox, frameNp, imageWidth, imageHeight, now)
+        for bbox in zip(results.xyxy[0]):
+            if bbox[0][4].tolist() == maxConf:
+                bboxCoords, frameNp = calcImage(
+                    bbox, frameNp, imageWidth, imageHeight, now
+                )
 
-    boundImage = cv2.cvtColor(frameNp, cv2.COLOR_RGB2BGR)
-    boundImage = base64.b64encode(cv2.imencode(".jpg", boundImage)[1]).decode("utf-8")
+        boundImage = cv2.cvtColor(frameNp, cv2.COLOR_RGB2BGR)
+        boundImage = base64.b64encode(cv2.imencode(".jpg", boundImage)[1]).decode(
+            "utf-8"
+        )
 
-    resultData = json.dumps(bboxCoords, default=str)
-    LOGGER.info(resultData)
+        resultData = json.dumps(bboxCoords, default=str)
+        LOGGER.info(resultData)
 
-    return json.dumps({"result": resultData, "img": boundImage})
+        return json.dumps({"result": resultData, "img": boundImage})
+    except Exception as e:
+        LOGGER.error(e)
+        return json.dumps({"result": "Image processing error"})
 
 
 @app.route("/", methods=["GET"])

@@ -7,8 +7,10 @@ import json
 from datetime import datetime
 import logging
 from flask import Flask, request, redirect
+from flask_cors import CORS
 
 app = Flask(__name__)
+CORS(app)
 
 model = torch.hub.load(
     "./yolov5", "custom", path="./best.pt", source="local", force_reload=True

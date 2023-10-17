@@ -77,7 +77,11 @@ def imageHandler():
     imageHeight = frameNp.shape[0]
 
     try:
-        maxConf = max([bbox[0][4].tolist() for bbox in zip(results.xyxy[0])])
+        try:
+            maxConf = max([bbox[0][4].tolist() for bbox in zip(results.xyxy[0])])
+        except Exception as e:
+            LOGGER.error(e)
+            return json.dumps({"result": "No object detected"})
 
         for bbox in zip(results.xyxy[0]):
             if bbox[0][4].tolist() == maxConf:

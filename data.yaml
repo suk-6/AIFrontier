@@ -1,0 +1,12 @@
+path: /home/woosuk/AIFrontier
+
+train: ./train/images
+val: ./val/images
+test: ./test/images
+
+names:
+    0: COVID-19
+    1: NORMAL
+    2: PNEUMONIA-VIRUS
+    3: PNEUMONIA-BACTERIA
+    4: TURBERCULOSIS
